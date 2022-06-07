@@ -1,0 +1,103 @@
+version: '3.3'
+services:
+    bitbucket:
+        container_name: bitbucket
+        build: ./bitbucket
+        image: atlassian/bitbucket
+        restart: always
+        environment:
+          - VIRTUAL_HOST=station.rodriguezgallego.com
+          - VIRTUAL_PORT=7990
+          - SERVER_PROXY_NAME=station.rodriguezgallego.com
+          - SERVER_PROXY_PORT=446
+          - SERVER_TOMCAT_SECURE=true
+          - SERVER_TOMCAT_SCHEME=https
+        volumes:
+            - './bitbucket/home:/var/atlassian/application-data/bitbucket/'
+        ports:
+            - '7990:7990'
+            - '7999:7999'
+        network_mode: bridge
+#            - '8443:8443'
+#            - '443:443'
+#        networks:
+#          pasir:
+#            ipv4_address: 10.5.0.7
+
+    jira-software:
+        container_name: jira
+        build: ./jira
+        image: atlassian/jira-software
+        restart: always
+        environment:
+          - VIRTUAL_HOST=station.rodriguezgallego.com
+          - VIRTUAL_PORT=8080
+          - ATL_PROXY_NAME=station.rodriguezgallego.com
+          - ATL_PROXY_PORT=444
+          - ATL_TOMCAT_SECURE=true
+          - ATL_TOMCAT_SCHEME=https
+        volumes:
+            - './jira/home/:/var/atlassian/application-data/jira/'
+        ports:
+            - '8080:8080'
+        network_mode: bridge
+
+#        networks:
+#          pasir:
+#            ipv4_address: 10.5.0.8
+
+
+    confluence:
+        container_name: confluence
+        build: ./confluence
+        restart: always
+        environment:
+          - VIRTUAL_HOST=station.rodriguezgallego.com
+          - VIRTUAL_PORT=8090
+          - ATL_PROXY_NAME=station.rodriguezgallego.com
+          - ATL_PROXY_PORT=445
+          - ATL_TOMCAT_SECURE=true
+          - ATL_TOMCAT_SCHEME=https
+        volumes:
+            - './confluence/home:/var/atlassian/application-data/confluence'
+        ports:
+            - '8090:8090'
+            - '8091:8091'
+#            - '445:445'
+#        networks:
+#          pasir:
+#            ipv4_address: 10.5.0.9
+        network_mode: bridge
+
+    bbdd:
+        container_name: bbdd
+        build: ./bbdd
+#        image: mysql:8.0
+        command: '--default-authentication-plugin=mysql_native_password'
+        command:
+          [
+            "mysqld",
+            "--character-set-server=utf8",
+            "--collation-server=utf8_bin",
+          ]       
+        restart: always
+        environment:
+#          MYSQL_DATABASE: jira_db confluence_db bitbucket_db
+          MYSQL_ROOT_PASSWORD: bolson
+          MYSQL_USER: bbdd_user
+          MYSQL_PASSWORD: bolson
+        volumes:
+            - ./bbdd/init.sql:/docker-entrypoint-initdb.d/setup.sql
+            - ./bbdd/mysql:/var/lib/mysql
+        ports:
+            - '3306:3306'
+        network_mode: host
+
+
+#networks:
+#  pasir:
+#    driver: bridge
+#    ipam:
+#     config:
+#       - subnet: 10.5.0.0/16
+#         gateway: 10.5.0.1
